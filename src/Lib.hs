@@ -149,18 +149,14 @@ class Profunctor f where
 instance Profunctor (->) where
   dimap b2a c2d a2c = c2d . a2c . b2a
 
+-- type Lens s t a b = forall p. Strong p => p a b -> p s t
+
+-- HW: lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
+
 -- For Isomorphic types, like newtypes
 --type Iso s t a b = forall p. Profunctor p => p a b -> p s t
 type Iso s t a b = forall p f. (Profunctor p, Functor f) => p a (f b) -> p s (f t)
 type Iso' s a = Iso s s a a
-
--- Kleisli is similar but on Monad
-newtype Star f a b = Star (a -> f b)
-
-instance Functor f => Profunctor (Star f) where
-  dimap b2a c2d (Star a2fc) = Star (fmap c2d . a2fc . b2a)
-
--- HW: lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
 
 iso :: (s -> a) -> (b -> t) -> Iso s t a b
 --iso s2a b2t pafb = dimap s2a (fmap b2t) pafb
@@ -168,13 +164,17 @@ iso s2a b2t = dimap s2a (fmap b2t)
 
 -- HW: unget :: Iso s t a b -> b -> t
 
+-- Kleisli is similar but on Monad
+newtype Star f a b = Star (a -> f b)
+
+instance Functor f => Profunctor (Star f) where
+  dimap b2a c2d (Star a2fc) = Star (fmap c2d . a2fc . b2a)
+
 class Profunctor p => Strong p where
   first :: p a b -> p (a, c) (b, c)
 
 instance Functor f => Strong (Star f) where
   first (Star a2fb)= Star $ \(a, c) -> (, c) <$> a2fb a
-
--- type Lens s t a b = forall p. Strong p => p a b -> p s t
 
 class Profunctor p => Choice p where
   left :: p a b -> p (Either a c) (Either b c)
