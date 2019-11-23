@@ -52,6 +52,7 @@ address fn (Person name addr) = Person name <$> fn addr
 modifyPersonAddress' :: (Address -> Address) -> Person -> Person
 modifyPersonAddress' fn = runIdentity . address (Identity . fn)
 
+-- This is 'over' from the Lens library
 modify :: ((a -> Identity b) -> s -> Identity t) -> (a -> b) -> s -> t
 modify m f = runIdentity . m (Identity . f)
 
@@ -105,6 +106,9 @@ setGetLaw l s a = get l (set l a s) == a
 setSetLaw :: Eq s => Lens' s a -> s -> a -> Bool
 setSetLaw l s a = set l a (set l a s) == set l a s
 
+-- Look up key 'k' in a map 'm' and have a way to delete it (if the provided
+-- (a -> f b) function returns a Nothing), or update it (if it returns a
+-- (Maybe b) value)
 at :: Ord k => k -> Lens' (Map k v) (Maybe v)
 at k f m = fmap updateMap . f . Map.lookup k $ m
   where
@@ -113,6 +117,7 @@ at k f m = fmap updateMap . f . Map.lookup k $ m
                   (\v -> Map.insert k v m)
 
 -- HW: contains :: Ord a => a -> Lens' (Set a) Bool
+-- Similar to 'at' but for Set deletion / addition
 contains :: Ord a => a -> Lens' (Set a) Bool
 contains v f s = fmap updateSet . f . Set.member v $ s
   where
@@ -144,6 +149,7 @@ class Profunctor f where
 instance Profunctor (->) where
   dimap b2a c2d a2c = c2d . a2c . b2a
 
+-- For Isomorphic types, like newtypes
 --type Iso s t a b = forall p. Profunctor p => p a b -> p s t
 type Iso s t a b = forall p f. (Profunctor p, Functor f) => p a (f b) -> p s (f t)
 type Iso' s a = Iso s s a a
